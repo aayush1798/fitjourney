@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface OnboardingFlowProps {
@@ -19,7 +19,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
     activityLevel: '' as 'sedentary' | 'light' | 'moderate' | 'active',
     goalType: '' as 'lose' | 'maintain' | 'gain',
     unitSystem: 'metric' as 'metric' | 'imperial',
+    dietPreference: '' as 'vegetarian' | 'non-vegetarian' | 'vegan' | 'keto' | 'paleo' | 'mediterranean',
+    allergies: [] as string[],
+    dailyMeals: '' as '3-meals' | '5-meals',
   });
+
+  const commonAllergies = [
+    'Lactose', 'Gluten', 'Nuts', 'Shellfish', 'Eggs', 'Soy', 'Fish', 'Sesame'
+  ];
 
   const steps = [
     {
@@ -90,11 +97,45 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
         { value: 'gain', label: 'Gain Muscle/Weight' },
       ]
     },
+    {
+      title: 'Diet preference?',
+      field: 'dietPreference',
+      type: 'select',
+      options: [
+        { value: 'non-vegetarian', label: 'Non-Vegetarian' },
+        { value: 'vegetarian', label: 'Vegetarian' },
+        { value: 'vegan', label: 'Vegan' },
+        { value: 'keto', label: 'Keto' },
+        { value: 'paleo', label: 'Paleo' },
+        { value: 'mediterranean', label: 'Mediterranean' },
+      ]
+    },
+    {
+      title: 'Any allergies or restrictions?',
+      field: 'allergies',
+      type: 'multi-select',
+      subtitle: 'Select all that apply'
+    },
+    {
+      title: 'Preferred meal frequency?',
+      field: 'dailyMeals',
+      type: 'select',
+      options: [
+        { value: '3-meals', label: '3 Meals (Breakfast, Lunch, Dinner)' },
+        { value: '5-meals', label: '5 Meals (3 main + 2 snacks)' },
+      ]
+    },
   ];
 
   const currentStep = steps[step];
   const isLastStep = step === steps.length - 1;
-  const canProceed = formData[currentStep.field as keyof typeof formData] !== '';
+  
+  const canProceed = () => {
+    if (currentStep.field === 'allergies') {
+      return true; // Allergies are optional
+    }
+    return formData[currentStep.field as keyof typeof formData] !== '';
+  };
 
   const handleNext = () => {
     if (isLastStep) {
@@ -119,6 +160,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
         activityLevel: formData.activityLevel,
         goalType: formData.goalType,
         unitSystem: formData.unitSystem,
+        dietPreference: formData.dietPreference,
+        allergies: formData.allergies,
+        dailyMeals: formData.dailyMeals,
         createdAt: new Date().toISOString(),
       };
 
@@ -141,6 +185,23 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
       ...formData,
       [currentStep.field]: value,
     });
+  };
+
+  const handleAllergyToggle = (allergy: string) => {
+    const currentAllergies = formData.allergies;
+    const isSelected = currentAllergies.includes(allergy);
+    
+    if (isSelected) {
+      setFormData({
+        ...formData,
+        allergies: currentAllergies.filter(a => a !== allergy)
+      });
+    } else {
+      setFormData({
+        ...formData,
+        allergies: [...currentAllergies, allergy]
+      });
+    }
   };
 
   return (
@@ -171,9 +232,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
                 {currentStep.title}
               </h2>
+              {currentStep.subtitle && (
+                <p className="text-gray-600 text-center mb-6">{currentStep.subtitle}</p>
+              )}
 
               {currentStep.type === 'select' ? (
                 <div className="space-y-3 mb-8">
@@ -190,6 +254,42 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
                       {option.label}
                     </button>
                   ))}
+                </div>
+              ) : currentStep.type === 'multi-select' ? (
+                <div className="mb-8">
+                  <div className="grid grid-cols-2 gap-3">
+                    {commonAllergies.map((allergy) => (
+                      <button
+                        key={allergy}
+                        onClick={() => handleAllergyToggle(allergy)}
+                        className={`p-3 text-sm rounded-lg border-2 transition-colors ${
+                          formData.allergies.includes(allergy)
+                            ? 'border-primary-500 bg-primary-50 text-primary-700'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        {allergy}
+                        {formData.allergies.includes(allergy) && (
+                          <X className="w-4 h-4 inline ml-2" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {formData.allergies.length > 0 && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm text-gray-600 mb-2">Selected:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.allergies.map((allergy) => (
+                          <span
+                            key={allergy}
+                            className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm"
+                          >
+                            {allergy}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="mb-8">
@@ -224,9 +324,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete, onBack }) =
 
             <button
               onClick={handleNext}
-              disabled={!canProceed}
+              disabled={!canProceed()}
               className={`flex items-center px-6 py-3 rounded-lg font-semibold transition-colors ${
-                canProceed
+                canProceed()
                   ? 'bg-primary-600 hover:bg-primary-700 text-white'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}

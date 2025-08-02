@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Scale, Target, TrendingUp, Plus, Calendar, Flame } from 'lucide-react';
+import { Scale, Target, TrendingUp, Plus, Calendar, Flame, Utensils } from 'lucide-react';
 import { UserProfile, WeightEntry } from '../types';
 import { calculateTDEE, calculateWeeklyProgress, calculateStreak, convertWeight } from '../utils/calculations';
 
@@ -8,9 +8,10 @@ interface DashboardProps {
   profile: UserProfile;
   weightEntries: WeightEntry[];
   onLogWeight: () => void;
+  onViewDietPlan: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ profile, weightEntries, onLogWeight }) => {
+const Dashboard: React.FC<DashboardProps> = ({ profile, weightEntries, onLogWeight, onViewDietPlan }) => {
   const dailyCalories = Math.round(calculateTDEE(profile));
   const progress = calculateWeeklyProgress(profile, weightEntries);
   const streak = calculateStreak(weightEntries);
@@ -162,19 +163,27 @@ const Dashboard: React.FC<DashboardProps> = ({ profile, weightEntries, onLogWeig
           </div>
         </motion.div>
 
-        {/* Action Button */}
+        {/* Action Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="text-center"
+          className="flex flex-col sm:flex-row gap-4 justify-center"
         >
           <button
             onClick={onLogWeight}
-            className="inline-flex items-center px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-lg transition-colors duration-200"
+            className="inline-flex items-center justify-center px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-lg transition-colors duration-200"
           >
             <Plus className="w-5 h-5 mr-2" />
             Log Today's Weight
+          </button>
+          
+          <button
+            onClick={onViewDietPlan}
+            className="inline-flex items-center justify-center px-8 py-4 bg-success-600 hover:bg-success-700 text-white font-semibold rounded-xl shadow-lg transition-colors duration-200"
+          >
+            <Utensils className="w-5 h-5 mr-2" />
+            View Diet Plan
           </button>
         </motion.div>
       </div>
